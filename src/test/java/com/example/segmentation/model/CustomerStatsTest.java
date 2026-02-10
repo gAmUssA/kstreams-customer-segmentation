@@ -1,9 +1,12 @@
 package com.example.segmentation.model;
 
-import com.example.segmentation.serde.JsonSerde;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import com.example.segmentation.avro.Order;
+import com.example.segmentation.serde.JsonSerde;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 class CustomerStatsTest {
 
@@ -56,7 +59,9 @@ class CustomerStatsTest {
     void vipCustomerRequiresBothConditions() {
         CustomerStats stats = new CustomerStats();
         for (int i = 0; i < 10; i++) {
-            stats.add(new Order("o" + i, "c1", 100.0, 1000L * i, "electronics"));
+            stats.add(
+                new Order("o" + i, "c1", 100.0, 1000L * i, "electronics")
+            );
         }
 
         assertThat(stats.getTotalSpent()).isEqualTo(1000.0);
@@ -80,7 +85,9 @@ class CustomerStatsTest {
         stats.add(new Order("o1", "c1", 10.0, 1000L, "books"));
         stats.add(new Order("o2", "c1", 20.0, 2000L, "books"));
 
-        assertThat(stats.computePurchaseBehavior()).isEqualTo("Single-Category");
+        assertThat(stats.computePurchaseBehavior()).isEqualTo(
+            "Single-Category"
+        );
     }
 
     @Test
@@ -120,23 +127,51 @@ class CustomerStatsTest {
         stats.add(new Order("o3", "c1", 30.0, 3000L, "books"));
 
         assertThat(stats.getCategoriesCount()).isEqualTo(1);
-        assertThat(stats.computePurchaseBehavior()).isEqualTo("Single-Category");
+        assertThat(stats.computePurchaseBehavior()).isEqualTo(
+            "Single-Category"
+        );
     }
 
     @Test
-    void serdeRoundTrip() {
+    void customerStatsJsonSerdeRoundTrip() {
         JsonSerde<CustomerStats> serde = new JsonSerde<>(CustomerStats.class);
         CustomerStats original = new CustomerStats();
         original.add(new Order("o1", "c1", 100.0, 1000L, "books"));
         original.add(new Order("o2", "c1", 200.0, 2000L, "electronics"));
 
         byte[] bytes = serde.serializer().serialize("test-topic", original);
-        CustomerStats deserialized = serde.deserializer().deserialize("test-topic", bytes);
+        CustomerStats deserialized = serde
+            .deserializer()
+            .deserialize("test-topic", bytes);
 
         assertThat(deserialized.getTotalSpent()).isEqualTo(300.0);
         assertThat(deserialized.getOrderCount()).isEqualTo(2);
         assertThat(deserialized.getCategoriesCount()).isEqualTo(2);
-        assertThat(deserialized.computeSegment()).isEqualTo(original.computeSegment());
-        assertThat(deserialized.computePurchaseBehavior()).isEqualTo(original.computePurchaseBehavior());
+        assertThat(deserialized.computeSegment()).isEqualTo(
+            original.computeSegment()
+        );
+        assertThat(deserialized.computePurchaseBehavior()).isEqualTo(
+            original.computePurchaseBehavior()
+        );
+    }
+
+    @Test
+    void orderAvroSerdeRoundTrip() {
+        var srConfig = Map.of("schema.registry.url", "mock://test-stats");
+        var serde = new SpecificAvroSerde<Order>();
+        serde.configure(srConfig, false);
+
+        Order original = new Order("o1", "c1", 99.99, 1000L, "electronics");
+
+        byte[] bytes = serde.serializer().serialize("test-topic", original);
+        Order deserialized = serde
+            .deserializer()
+            .deserialize("test-topic", bytes);
+
+        assertThat(deserialized.getOrderId()).isEqualTo("o1");
+        assertThat(deserialized.getCustomerId()).isEqualTo("c1");
+        assertThat(deserialized.getAmount()).isEqualTo(99.99);
+        assertThat(deserialized.getTimestamp()).isEqualTo(1000L);
+        assertThat(deserialized.getCategory()).isEqualTo("electronics");
     }
 }

@@ -1,6 +1,7 @@
 plugins {
     java
     application
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
 }
 
 java {
@@ -15,21 +16,37 @@ application {
 
 repositories {
     mavenCentral()
+    maven("https://packages.confluent.io/maven/")
 }
 
 val kafkaVersion: String by project
 val jacksonVersion: String by project
 val junitVersion: String by project
+val avroVersion: String by project
+val confluentVersion: String by project
+val testcontainersVersion: String by project
+
+avro {
+    stringType.set("String")
+}
 
 dependencies {
     implementation("org.apache.kafka:kafka-streams:$kafkaVersion")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("org.apache.avro:avro:$avroVersion")
+    implementation("io.confluent:kafka-streams-avro-serde:$confluentVersion")
     implementation("org.slf4j:slf4j-api:2.0.13")
-    runtimeOnly("org.slf4j:slf4j-simple:2.0.13")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.16")
 
     testImplementation("org.apache.kafka:kafka-streams-test-utils:$kafkaVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
-    testImplementation("org.assertj:assertj-core:3.26.3")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.assertj:assertj-core:3.27.7")
+    testImplementation("org.testcontainers:kafka:$testcontainersVersion")
+    testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
+    testImplementation("io.confluent:kafka-avro-serializer:$confluentVersion")
+    testImplementation("org.awaitility:awaitility:4.2.2")
 }
 
 tasks.test {

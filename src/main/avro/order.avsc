@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "Order",
+  "namespace": "com.example.segmentation.avro",
+  "fields": [
+    {"name": "orderId",    "type": "string"},
+    {"name": "customerId", "type": "string"},
+    {"name": "amount",     "type": "double"},
+    {"name": "timestamp",  "type": "long"},
+    {"name": "category",   "type": "string"}
+  ]
+}

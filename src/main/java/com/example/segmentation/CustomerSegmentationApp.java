@@ -5,7 +5,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
-
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -66,7 +65,8 @@ public class CustomerSegmentationApp {
     }
 
     public static void main(String[] args) {
-        String bootstrapServers = "localhost:49658";
+        String bootstrapServers = "localhost:9092";
+        String schemaRegistryUrl = "http://localhost:8081";
 
         Properties props = new Properties();
         props.put(
@@ -77,18 +77,31 @@ public class CustomerSegmentationApp {
 
         createTopics(bootstrapServers);
 
-        Topology topology = CustomerSegmentationTopology.build();
+        log.info("Schema Registry URL: {}", schemaRegistryUrl);
+        var schemaRegistryConfig = java.util.Map.of(
+            "schema.registry.url",
+            schemaRegistryUrl
+        );
+        Topology topology = CustomerSegmentationTopology.build(
+            schemaRegistryConfig
+        );
         KafkaStreams streams = new KafkaStreams(topology, props);
+
+        streams.setStateListener((newState, oldState) ->
+            log.info("Streams state transition: {} -> {}", oldState, newState)
+        );
 
         CountDownLatch latch = new CountDownLatch(1);
         Runtime.getRuntime().addShutdownHook(
             new Thread(() -> {
+                log.info("Shutting down streams application...");
                 streams.close();
                 latch.countDown();
             })
         );
 
         try {
+            log.info("Starting customer segmentation streams application...");
             streams.start();
             latch.await();
         } catch (InterruptedException e) {

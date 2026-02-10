@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "CustomerSegment",
+  "namespace": "com.example.segmentation.avro",
+  "fields": [
+    {"name": "customerId",          "type": "string"},
+    {"name": "totalSpent",          "type": "double"},
+    {"name": "orderCount",          "type": "int"},
+    {"name": "avgOrderValue",       "type": "double"},
+    {"name": "categoriesPurchased", "type": "int"},
+    {"name": "customerSegment",     "type": "string"},
+    {"name": "purchaseBehavior",    "type": "string"}
+  ]
+}

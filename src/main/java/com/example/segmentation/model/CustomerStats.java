@@ -1,5 +1,6 @@
 package com.example.segmentation.model;
 
+import com.example.segmentation.avro.Order;
 import java.util.HashSet;
 import java.util.Set;
 
