@@ -36,6 +36,7 @@ dependencies {
     implementation("org.apache.avro:avro:$avroVersion")
     implementation("io.confluent:kafka-streams-avro-serde:$confluentVersion")
     implementation("org.slf4j:slf4j-api:2.0.13")
+    implementation("io.github.cdimascio:dotenv-java:3.2.0")
     runtimeOnly("ch.qos.logback:logback-classic:1.5.16")
 
     testImplementation("org.apache.kafka:kafka-streams-test-utils:$kafkaVersion")
@@ -45,10 +46,17 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.27.7")
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
-    testImplementation("io.confluent:kafka-avro-serializer:$confluentVersion")
+    implementation("io.confluent:kafka-avro-serializer:$confluentVersion")
     testImplementation("org.awaitility:awaitility:4.2.2")
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("runKafkaProducer") {
+    description = "Run the sample Order producer"
+    group = "application"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.example.segmentation.SampleOrderProducer")
 }

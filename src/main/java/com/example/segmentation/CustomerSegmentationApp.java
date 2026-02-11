@@ -1,5 +1,6 @@
 package com.example.segmentation;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -9,7 +10,6 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,21 +26,38 @@ public class CustomerSegmentationApp {
             AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
             bootstrapServers
         );
+        doCreateTopics(
+            config,
+            CustomerSegmentationTopology.INPUT_TOPIC,
+            CustomerSegmentationTopology.OUTPUT_TOPIC,
+            1,
+            (short) 1
+        );
+    }
 
+    static void createTopics(AppConfig config) {
+        doCreateTopics(
+            config.adminClientProperties(),
+            config.getInputTopic(),
+            config.getOutputTopic(),
+            config.getTopicPartitions(),
+            config.getTopicReplicationFactor()
+        );
+    }
+
+    private static void doCreateTopics(
+        Properties adminProps,
+        String inputTopic,
+        String outputTopic,
+        int partitions,
+        short replicationFactor
+    ) {
         var requiredTopics = List.of(
-            new NewTopic(
-                CustomerSegmentationTopology.INPUT_TOPIC,
-                1,
-                (short) 1
-            ),
-            new NewTopic(
-                CustomerSegmentationTopology.OUTPUT_TOPIC,
-                1,
-                (short) 1
-            )
+            new NewTopic(inputTopic, partitions, replicationFactor),
+            new NewTopic(outputTopic, partitions, replicationFactor)
         );
 
-        try (var admin = AdminClient.create(config)) {
+        try (var admin = AdminClient.create(adminProps)) {
             Set<String> existing = admin.listTopics().names().get();
             List<NewTopic> toCreate = requiredTopics
                 .stream()
@@ -65,27 +82,30 @@ public class CustomerSegmentationApp {
     }
 
     public static void main(String[] args) {
-        String bootstrapServers = "localhost:9092";
-        String schemaRegistryUrl = "http://localhost:8081";
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+        AppConfig config = new AppConfig(dotenv);
 
-        Properties props = new Properties();
-        props.put(
-            StreamsConfig.APPLICATION_ID_CONFIG,
-            "customer-segmentation-app"
+        log.info("Starting in {} mode", config.getMode());
+        log.info(
+            "Bootstrap servers: {}",
+            config.streamsProperties().get("bootstrap.servers")
         );
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-
-        createTopics(bootstrapServers);
-
-        log.info("Schema Registry URL: {}", schemaRegistryUrl);
-        var schemaRegistryConfig = java.util.Map.of(
-            "schema.registry.url",
-            schemaRegistryUrl
+        log.info(
+            "Schema Registry URL: {}",
+            config.schemaRegistryConfig().get("schema.registry.url")
         );
+
+        createTopics(config);
+
         Topology topology = CustomerSegmentationTopology.build(
-            schemaRegistryConfig
+            config.schemaRegistryConfig(),
+            config.getInputTopic(),
+            config.getOutputTopic()
         );
-        KafkaStreams streams = new KafkaStreams(topology, props);
+        KafkaStreams streams = new KafkaStreams(
+            topology,
+            config.streamsProperties()
+        );
 
         streams.setStateListener((newState, oldState) ->
             log.info("Streams state transition: {} -> {}", oldState, newState)

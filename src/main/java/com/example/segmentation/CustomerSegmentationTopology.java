@@ -30,10 +30,18 @@ public class CustomerSegmentationTopology {
     public static final String STATS_STORE = "customer-stats-store";
 
     public static Topology build(Map<String, String> schemaRegistryConfig) {
+        return build(schemaRegistryConfig, INPUT_TOPIC, OUTPUT_TOPIC);
+    }
+
+    public static Topology build(
+        Map<String, String> schemaRegistryConfig,
+        String inputTopic,
+        String outputTopic
+    ) {
         log.info(
             "Building customer segmentation topology: {} -> {}",
-            INPUT_TOPIC,
-            OUTPUT_TOPIC
+            inputTopic,
+            outputTopic
         );
         var builder = new StreamsBuilder();
 
@@ -47,7 +55,7 @@ public class CustomerSegmentationTopology {
         segmentSerde.configure(schemaRegistryConfig, false);
 
         var orders = builder.stream(
-            INPUT_TOPIC,
+            inputTopic,
             Consumed.with(stringSerde, orderSerde)
         );
 
@@ -72,7 +80,7 @@ public class CustomerSegmentationTopology {
                 Materialized.with(stringSerde, segmentSerde)
             )
             .toStream()
-            .to(OUTPUT_TOPIC, Produced.with(stringSerde, segmentSerde));
+            .to(outputTopic, Produced.with(stringSerde, segmentSerde));
 
         var topology = builder.build();
         log.debug("Topology description:\n{}", topology.describe());
