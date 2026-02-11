@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "groupName": "Confluent Platform",
+      "matchPackagePrefixes": ["io.confluent"],
+      "matchManagers": ["gradle"]
+    },
+    {
+      "groupName": "Testcontainers",
+      "matchPackagePrefixes": ["org.testcontainers"],
+      "matchManagers": ["gradle"]
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    }
+  ]
+}
