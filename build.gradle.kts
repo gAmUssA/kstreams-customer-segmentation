@@ -35,7 +35,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("org.apache.avro:avro:$avroVersion")
     implementation("io.confluent:kafka-streams-avro-serde:$confluentVersion")
-    implementation("org.slf4j:slf4j-api:2.0.13")
+    implementation("org.slf4j:slf4j-api:2.0.17")
     implementation("io.github.cdimascio:dotenv-java:3.2.0")
     runtimeOnly("ch.qos.logback:logback-classic:1.5.29")
 
