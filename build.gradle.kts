@@ -47,7 +47,7 @@ dependencies {
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     implementation("io.confluent:kafka-avro-serializer:$confluentVersion")
-    testImplementation("org.awaitility:awaitility:4.2.2")
+    testImplementation("org.awaitility:awaitility:4.3.0")
 }
 
 tasks.test {
