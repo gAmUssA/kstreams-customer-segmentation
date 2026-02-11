@@ -52,6 +52,22 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+    afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
+        if (desc.parent == null) {
+            println("\nTest Results: ${result.resultType} " +
+                "(${result.testCount} tests, " +
+                "${result.successfulTestCount} passed, " +
+                "${result.failedTestCount} failed, " +
+                "${result.skippedTestCount} skipped)")
+        }
+    }))
 }
 
 tasks.register<JavaExec>("runKafkaProducer") {
